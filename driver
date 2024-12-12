@@ -34,6 +34,7 @@ def params():
     parser.add_argument('-M', '--max_num_seqs',           type=int, default=1024)
     parser.add_argument('-u', '--gpu_memory_utilization', type=float, default=0.95)
     parser.add_argument('-e', '--enforce_eager',          action='store_true')
+    parser.add_argument('-p', '--profile',          action='store_true')
     parser.parse_args(namespace=par)
 
     attrs = []
@@ -104,8 +105,12 @@ def run(input_size, output_size, batch_size):
 
     for rep in range(par.reps):
         fmwork.t0()
+        if par.profile and rep == 1:
+            var.llm.start_profile()
         var.llm.generate(**kwargs)
         torch.cuda.synchronize()
+        if par.profile and rep == 1:
+            var.llm.stop_profile()
         fmwork.t1(
             rep, par.reps,
             input_size, output_size, batch_size,
